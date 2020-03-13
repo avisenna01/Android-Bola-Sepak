@@ -141,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
         RecyclerView searchResult = findViewById(R.id.search_result);
         searchResult.setLayoutManager(new GridLayoutManager(getApplicationContext(),gridColumnCount));
         Log.d(TAG, "RecyclerView: "+gridColumnCount);
-        EventAdapter adapter = new EventAdapter(this,mEvent);
+        EventAdapter adapter = new EventAdapter(getApplicationContext(),mEvent);
         searchResult.setAdapter(adapter);
         Log.d(TAG, "RecyclerView: Displayed ");
     }

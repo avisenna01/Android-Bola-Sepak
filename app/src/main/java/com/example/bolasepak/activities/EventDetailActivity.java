@@ -46,7 +46,7 @@ public class EventDetailActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.event_detail_activity);
+        setContentView(R.layout.event_detail);
         requestQueue = Volley.newRequestQueue(this);
         date = findViewById(R.id.date);
         homeTeam = findViewById(R.id.homeTeamName);
@@ -62,6 +62,7 @@ public class EventDetailActivity extends AppCompatActivity {
         Intent intent = this.getIntent();
         Bundle bundle = intent.getExtras();
         event = (Event) bundle.getSerializable("Schedule");
+        Log.d(TAG, "onCreate activiety 2"+event.getDate()+date);
         assert event != null;
         date.setText(event.getDate());
         homeTeam.setText(event.getStrHomeTeam());
