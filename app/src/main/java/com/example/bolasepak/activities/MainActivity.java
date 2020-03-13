@@ -1,8 +1,10 @@
-package com.example.bolasepak;
+package com.example.bolasepak.activities;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+
+import com.example.bolasepak.R;
 
 public class MainActivity extends AppCompatActivity {
 
