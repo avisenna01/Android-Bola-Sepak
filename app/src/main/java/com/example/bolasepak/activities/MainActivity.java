@@ -57,12 +57,13 @@ public class MainActivity extends AppCompatActivity {
     private Context context;
     private int gridColumnCount;
     private String keyword;
-
+    public  RecyclerView searchResult;
+    public EventAdapter adapter;
     // VC START
     private TextView tvSteps;
-    private String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-    private String IntentAction = getResources().getString(R.string.intent_action);
-    StepBroadcastReceiver stepBroadcastReceiver = new StepBroadcastReceiver(this);
+    private String date;
+    private String IntentAction;
+    StepBroadcastReceiver stepBroadcastReceiver;
     boolean mBoundedStep;
     StepSensorService mStepSensorService;
     public static StepDatabase stepDatabase;
@@ -79,8 +80,14 @@ public class MainActivity extends AppCompatActivity {
         searchBar = findViewById(R.id.search_bar);
         requestQueue = Volley.newRequestQueue(this);
         URLEvent = getResources().getString(R.string.httphost_event);
-        if (isNetworkConnected()) httpGet(URLEvent+keyword);
-        else searchDb(keyword);
+        if (isNetworkConnected()) {
+            Log.d(TAG, "Network connected 1 : "+URLEvent+keyword);
+            httpGet(URLEvent+keyword);
+        }
+        else {
+            Log.d(TAG, "Network not connected : "+keyword);
+            searchDb(keyword);
+        }
         searchBar.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -95,12 +102,21 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "afterTextChanged: "+s);
                 keyword = s.toString();
                 String url = URLEvent + keyword;
-                if (isNetworkConnected()) httpGet(url);
-                else searchDb(keyword);
+                if (isNetworkConnected()) {
+                    Log.d(TAG, "Network connected 2 : "+ url);
+                    httpGet(url);
+                }
+                else {
+                    Log.d(TAG, "Network Unconnected 2 : "+keyword);
+                    searchDb(keyword);
+                }
             }
         });
 
         // VC START
+        date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        IntentAction = getResources().getString(R.string.intent_action);
+        stepBroadcastReceiver = new StepBroadcastReceiver(this);
         tvSteps = (TextView) findViewById(R.id.tracking);
         IntentFilter filter = new IntentFilter(IntentAction);
         registerReceiver(stepBroadcastReceiver, filter);
@@ -181,15 +197,15 @@ public class MainActivity extends AppCompatActivity {
         RecyclerView();
     }
     private void RecyclerView(){
-        RecyclerView searchResult = findViewById(R.id.search_result);
+        searchResult = findViewById(R.id.search_result);
         searchResult.setLayoutManager(new GridLayoutManager(getApplicationContext(),gridColumnCount));
         Log.d(TAG, "RecyclerView: "+gridColumnCount);
-        EventAdapter adapter = new EventAdapter(getApplicationContext(),mEvent);
+        adapter = new EventAdapter(this,mEvent);
         searchResult.setAdapter(adapter);
         Log.d(TAG, "RecyclerView: Displayed ");
     }
 
-    // VC START HERE
+    // VC START
     ServiceConnection mConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -209,8 +225,11 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "setStepCount: ");
         List<Step> steps = stepDatabase.stepDao().getTodayStep(date);
 
+        Log.d(TAG, "size: "+ Integer.toString(steps.size()));
+
         if (steps.size()!=0) {
             for (Step each_step : steps) {
+                Log.d(TAG, Integer.toString(each_step.getSteps()));
                 tvSteps.setText(Integer.toString(each_step.getSteps()));
             }
         }
@@ -230,5 +249,5 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         unregisterReceiver(stepBroadcastReceiver);
     }
-    // VC END HERE
+    // VC END
 }

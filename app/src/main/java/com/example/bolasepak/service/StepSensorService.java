@@ -14,6 +14,7 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.room.Room;
 
+import com.example.bolasepak.R;
 import com.example.bolasepak.database.StepDatabase;
 import com.example.bolasepak.model.Step;
 
@@ -27,7 +28,7 @@ public class StepSensorService extends Service implements SensorEventListener {
 
     private SensorManager mSensorManager;
     private Sensor mStepDetectorSensor;
-    private String IntentAction = "com.example.STEP_BROADCAST_ACTION";
+    private String IntentAction;
 
     public static StepDatabase stepDatabase;
 
@@ -50,6 +51,7 @@ public class StepSensorService extends Service implements SensorEventListener {
         }
         else Log.d(TAG, "not exist");
         stepDatabase = Room.databaseBuilder(getApplicationContext(),StepDatabase.class,"stepdb").allowMainThreadQueries().build();
+        IntentAction = getResources().getString(R.string.intent_action);
     }
 
     @Override

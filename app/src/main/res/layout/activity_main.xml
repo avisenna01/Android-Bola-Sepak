@@ -13,6 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/tracking"
+        android:text="0"
         app:layout_constraintBottom_toTopOf="@+id/search_bar"
         app:layout_constraintTop_toTopOf="parent"/>
     <EditText
