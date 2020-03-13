@@ -25,7 +25,7 @@
             android:textAlignment="center"
             android:orientation="vertical">
 
-            <ImageView
+            <ImageButton
                 android:id="@+id/homeTeamPhoto"
                 android:layout_width="100dp"
                 android:layout_height="100dp"
@@ -97,7 +97,7 @@
             android:gravity="center"
             android:textAlignment="center"
             android:orientation="vertical">
-            <ImageView
+            <ImageButton
                 android:layout_width="100dp"
                 android:layout_height="100dp"
                 android:background="@drawable/loading"
