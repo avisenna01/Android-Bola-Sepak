@@ -7,6 +7,7 @@ import androidx.room.Room;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -39,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     private String URLEvent;
     private Context context;
     private int gridColumnCount;
+    private String keyword;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate: ");
@@ -50,8 +52,8 @@ public class MainActivity extends AppCompatActivity {
         searchBar = findViewById(R.id.search_bar);
         requestQueue = Volley.newRequestQueue(this);
         URLEvent = getResources().getString(R.string.httphost_event);
-        if (isNetworkConnected()) httpGet(URLEvent);
-        else searchDb("");
+        if (isNetworkConnected()) httpGet(URLEvent+keyword);
+        else searchDb(keyword);
         searchBar.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -64,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void afterTextChanged(Editable s) {
                 Log.d(TAG, "afterTextChanged: "+s);
-                String keyword = s.toString();
+                keyword = s.toString();
                 String url = URLEvent + keyword;
                 if (isNetworkConnected()) httpGet(url);
                 else searchDb(keyword);
@@ -73,7 +75,8 @@ public class MainActivity extends AppCompatActivity {
     }
     private boolean isNetworkConnected() {
         ConnectivityManager cm = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
-        return cm != null;
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
     }
     public void searchDb(String keyword){
         keyword = '%'+keyword+'%';
@@ -140,5 +143,6 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "RecyclerView: "+gridColumnCount);
         EventAdapter adapter = new EventAdapter(this,mEvent);
         searchResult.setAdapter(adapter);
+        Log.d(TAG, "RecyclerView: Displayed ");
     }
 }

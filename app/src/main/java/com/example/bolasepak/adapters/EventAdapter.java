@@ -2,11 +2,15 @@ package com.example.bolasepak.adapters;
 
 import android.content.Context;
 import android.content.Intent;
+import android.media.Image;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -14,20 +18,38 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.example.bolasepak.R;
+import com.example.bolasepak.activities.EventDetailActivity;
 import com.example.bolasepak.activities.MainActivity;
 import com.example.bolasepak.model.*;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.net.NetworkInterface;
 import java.util.ArrayList;
 
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder>{
     private Context context;
-    private ArrayList<Event> mEvent = new ArrayList<>();
+    private ArrayList<Event> mEvent;
+    private ArrayList<Team> mTeam;
+    private static final String TAG = "EventAdapter";
+    private RequestOptions options;
 
     public EventAdapter(Context context, ArrayList<Event> mEvent) {
+        Log.d(TAG, "EventAdapter: "+mEvent.isEmpty());
         this.context = context;
         this.mEvent = mEvent;
+        options = new RequestOptions().centerCrop().placeholder(R.drawable.loading).error(R.drawable.loading);
     }
 
     @NonNull
@@ -57,15 +79,71 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder>{
     }
 
     private void passData(Event event){
-        //TODO
+        Intent intent = new Intent(context, EventDetailActivity.class);
+        Bundle bundle = new Bundle();
+        bundle.putSerializable("Schedule", event);
+        intent.putExtras(bundle);
+        context.startActivities(new Intent[]{intent});
     }
 
-    private void loadPicture(final ImageView imageView,final int position, final String id_team){
-        //TODO
+    private boolean isNetworkConnected() {
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork!=null && activeNetwork.isConnectedOrConnecting();
     }
 
-    public void getPicture(final ImageView imageView, final int position, final String id_team) {
-        //TODO
+    private void loadPicture(final ImageButton imageButton, final int position, final String id_team){
+        mTeam = (ArrayList<Team>) MainActivity.databaseBolaSepak.teamDao().searchTeamById(id_team);
+        Log.d(TAG, "onCreate: "+mTeam.isEmpty());
+        if (!mTeam.isEmpty()){
+            Log.d(TAG, "onCreate: database Ada");
+            if (isNetworkConnected())
+                Glide.with(context)
+                        .asBitmap()
+                        .apply(options)
+                        .load(mTeam.get(0).getUrlPict())
+                        .into(imageButton);
+        }else {
+            Glide.with(context)
+                    .load(context.getResources().getIdentifier("loading","drawable", context.getPackageName())).apply(options)
+                    .into(imageButton);
+            if (isNetworkConnected())
+                getPicture(imageButton,position,id_team);
+        }
+    }
+
+    private void getPicture(final ImageButton imageButton, final int position, final String id_team) {
+        String url = "https://www.thesportsdb.com/api/v1/json/1/lookupteam.php?id="+id_team;
+        Log.d(TAG, "getPicture: "+url);
+        RequestQueue requestQueue = Volley.newRequestQueue(context);
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            JSONArray jsonArray = response.getJSONArray("teams");
+                            JSONObject jsonObject = jsonArray.getJSONObject(0);
+                            String pictUrl = jsonObject.getString("strTeamBadge");
+                            String teamName = jsonObject.getString("strTeam");
+                            String description = jsonObject.getString("strLeague");
+                            MainActivity.databaseBolaSepak.teamDao().addTeam(new Team((id_team),teamName,pictUrl,description));
+                            Glide.with(context)
+                                    .asBitmap()
+                                    .load(pictUrl)
+                                    .apply(options)
+                                    .into(imageButton);
+                            Log.d(TAG, "onResponse: "+pictUrl);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.d(TAG, "onErrorResponse: "+error);
+            }
+        });
+        requestQueue.add(jsonObjectRequest);
     }
     @Override
     public int getItemCount() {
@@ -74,8 +152,8 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder>{
 
     public class ViewHolder extends RecyclerView.ViewHolder{
         TextView date;
-        ImageView awayTeamPhoto;
-        ImageView homeTeamPhoto;
+        ImageButton awayTeamPhoto;
+        ImageButton homeTeamPhoto;
         TextView awayScore;
         TextView homeScore;
         TextView awayTeamName;
