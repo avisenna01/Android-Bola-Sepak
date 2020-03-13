@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">BolaSepak</string>
+    <string name="todo">todo</string>
+    <string name="versus">vs</string>
+    <string name="shot">Shot</string>
+    <string name="goal">Goals</string>
+    <string name="weather_tab">Weather</string>
+    <string name="httphost_event">https://www.thesportsdb.com/api/v1/json/1/searchevents.php?e=</string>
+</resources>
