@@ -5,14 +5,21 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.room.Room;
 
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -23,13 +30,22 @@ import com.android.volley.toolbox.Volley;
 import com.example.bolasepak.R;
 import com.example.bolasepak.adapters.EventAdapter;
 import com.example.bolasepak.database.DatabaseBolaSepak;
+import com.example.bolasepak.database.StepDatabase;
 import com.example.bolasepak.model.Event;
+import com.example.bolasepak.model.Step;
+import com.example.bolasepak.service.NotificationService;
+import com.example.bolasepak.service.StepBroadcastReceiver;
+import com.example.bolasepak.service.StepSensorService;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -41,6 +57,17 @@ public class MainActivity extends AppCompatActivity {
     private Context context;
     private int gridColumnCount;
     private String keyword;
+
+    // VC START
+    private TextView tvSteps;
+    private String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+    private String IntentAction = getResources().getString(R.string.intent_action);
+    StepBroadcastReceiver stepBroadcastReceiver = new StepBroadcastReceiver(this);
+    boolean mBoundedStep;
+    StepSensorService mStepSensorService;
+    public static StepDatabase stepDatabase;
+    // VC END
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate: ");
@@ -72,7 +99,23 @@ public class MainActivity extends AppCompatActivity {
                 else searchDb(keyword);
             }
         });
+
+        // VC START
+        tvSteps = (TextView) findViewById(R.id.tracking);
+        IntentFilter filter = new IntentFilter(IntentAction);
+        registerReceiver(stepBroadcastReceiver, filter);
+        stepDatabase = Room.databaseBuilder(getApplicationContext(),StepDatabase.class,"stepdb").allowMainThreadQueries().build();
+
+        Intent mIntent = new Intent(this, StepSensorService.class);
+        bindService(mIntent, mConnection, BIND_AUTO_CREATE);
+
+        // RIGHT ONE LINE BELOW NEED UPDATE
+        startService(new Intent(getApplicationContext(), NotificationService.class));
+
+        setStepCount();
+        // VC END
     }
+
     private boolean isNetworkConnected() {
         ConnectivityManager cm = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
@@ -145,4 +188,47 @@ public class MainActivity extends AppCompatActivity {
         searchResult.setAdapter(adapter);
         Log.d(TAG, "RecyclerView: Displayed ");
     }
+
+    // VC START HERE
+    ServiceConnection mConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            mBoundedStep = true;
+            StepSensorService.LocalBinder mLocalBinder = (StepSensorService.LocalBinder)service;
+            mStepSensorService = mLocalBinder.getStepSensorService();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            mBoundedStep = false;
+            mStepSensorService = null;
+        }
+    };
+
+    public void setStepCount() {
+        Log.d(TAG, "setStepCount: ");
+        List<Step> steps = stepDatabase.stepDao().getTodayStep(date);
+
+        if (steps.size()!=0) {
+            for (Step each_step : steps) {
+                tvSteps.setText(Integer.toString(each_step.getSteps()));
+            }
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if(mBoundedStep) {
+            unbindService(mConnection);
+            mBoundedStep = false;
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(stepBroadcastReceiver);
+    }
+    // VC END HERE
 }
