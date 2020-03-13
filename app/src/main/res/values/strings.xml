@@ -6,4 +6,5 @@
     <string name="goal">Goals</string>
     <string name="weather_tab">Weather</string>
     <string name="httphost_event">https://www.thesportsdb.com/api/v1/json/1/searchevents.php?e=</string>
+    <string name="intent_action">com.example.STEP_BROADCAST_ACTION</string>
 </resources>
